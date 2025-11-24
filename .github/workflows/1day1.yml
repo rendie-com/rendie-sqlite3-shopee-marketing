@@ -51,8 +51,8 @@ jobs:
           npm i  
           node ./1day1.js          
         env:
-          NODE_SHOPEE_ACCESS_TOKEN: ${{ secrets.NODE_SHOPEE_ACCESS_TOKEN }}  
-          NODE_SHOPEE_REFRESH_TOKEN: ${{ secrets.NODE_SHOPEE_REFRESH_TOKEN }}
+          NODE_SHOPEE_ACCESS_TOKEN: ${{ secrets.NODE_SHOPEE_ACCESS_TOKEN2 }}  
+          NODE_SHOPEE_REFRESH_TOKEN: ${{ secrets.NODE_SHOPEE_REFRESH_TOKEN2 }}
           
       - name: 部署[sqlite3/shopee/商品/]目录
         uses: JamesIves/github-pages-deploy-action@v4
