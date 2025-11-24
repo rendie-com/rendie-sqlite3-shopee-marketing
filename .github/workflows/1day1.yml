@@ -1,1 +1,82 @@
+name: 每天运执一次nextjs和node
+on: 
+  # 手动触发
+  workflow_dispatch:
+  # 定时器
+  schedule:
+   - cron: "0 0 * * *"
+env:  
+  TZ: Asia/Shanghai
 
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+    
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+            
+      - name: 更新时区
+        id: date
+        run: |
+          sudo timedatectl set-timezone "$TZ"
+          
+      - name: 下载并运行rendie-nextjs       
+        run: |        
+          git clone https://github.com/rendie-com/rendie-nextjs -b main rendie-nextjs
+          cd ./rendie-nextjs/
+          npm i                
+          npm run dev &
+        env:
+          NEXTJS_CONFIG_DEFAULT_DB: ${{ secrets.NEXTJS_CONFIG_DEFAULT_DB }}  
+          NEXTJS_CONFIG_PG01: ${{ secrets.NEXTJS_CONFIG_PG01 }}  
+          NEXTJS_CONFIG_PG02: ${{ secrets.NEXTJS_CONFIG_PG02 }} 
+          NEXTJS_CONFIG_SQLITE: ${{ secrets.NEXTJS_CONFIG_SQLITE }} 
+
+      - name: 下载rendie-chrome扩展       
+        run: |        
+          git clone https://github.com/rendie-com/rendie-chrome -b main ./node/rendie-chrome   
+          
+      - name: 运行node       
+        run: |
+          mkdir -p ./error/         
+          cd ./node/
+          npm i  
+          node ./1day.js          
+        env:
+          NODE_SHOPEE_ACCESS_TOKEN: ${{ secrets.NODE_SHOPEE_ACCESS_TOKEN }}  
+          NODE_SHOPEE_REFRESH_TOKEN: ${{ secrets.NODE_SHOPEE_REFRESH_TOKEN }}
+          
+      - name: 部署[sqlite3/shopee/商品/]目录
+        uses: JamesIves/github-pages-deploy-action@v4
+        with: 
+            branch: main
+            folder: sqlite3/shopee/商品/
+            target-folder: sqlite3/shopee/商品/
+            
+      - name: 部署[sqlite3/shopee/营销中心/]目录
+        uses: JamesIves/github-pages-deploy-action@v4
+        with: 
+            branch: main
+            folder: sqlite3/shopee/营销中心/
+            target-folder: sqlite3/shopee/营销中心/
+            
+      - name: 部署[error/]目录
+        uses: JamesIves/github-pages-deploy-action@v4
+        with: 
+            branch: main
+            folder: error/
+            target-folder: error/
+            
+      - name: 删除运行记录
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          retain_days: 30
+          keep_minimum_runs: 0
