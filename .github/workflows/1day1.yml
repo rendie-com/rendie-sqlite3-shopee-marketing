@@ -28,6 +28,13 @@ jobs:
         run: |
           sudo timedatectl set-timezone "$TZ"
           
+      - name: 安装文泉驿字体     
+        run: |
+          sudo timedatectl set-timezone "$TZ"
+          sudo yum install wqy-microhei-fonts.noarch -y
+          sudo yum install wqy-unibit-fonts.noarch -y
+          sudo yum install wqy-zenhei-fonts.noarch -y
+          
       - name: 下载并运行rendie-nextjs       
         run: |        
           git clone https://github.com/rendie-com/rendie-nextjs -b main rendie-nextjs
