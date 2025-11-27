@@ -30,9 +30,7 @@ jobs:
           
       - name: 安装文泉驿字体     
         run: |
-          sudo apt-get install wqy-microhei-fonts.noarch -y
-          sudo apt-get install wqy-unibit-fonts.noarch -y
-          sudo apt-get install wqy-zenhei-fonts.noarch -y
+          sudo apt-get install ttf-wqy-zenhei -y          
           
       - name: 下载并运行rendie-nextjs       
         run: |        
