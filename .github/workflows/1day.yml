@@ -28,6 +28,10 @@ jobs:
         run: |
           sudo timedatectl set-timezone "$TZ"
           
+      - name: 安装文泉驿字体     
+        run: |
+          sudo apt-get install ttf-wqy-zenhei
+          
       - name: 下载并运行rendie-nextjs       
         run: |        
           git clone https://github.com/rendie-com/rendie-nextjs -b main rendie-nextjs
