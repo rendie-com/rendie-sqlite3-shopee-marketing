@@ -30,7 +30,7 @@ jobs:
           
       - name: 安装文泉驿字体     
         run: |
-          sudo apt-get install ttf-wqy-zenhei -y          
+          sudo apt-get install ttf-wqy-zenhei
           
       - name: 下载并运行rendie-nextjs       
         run: |        
