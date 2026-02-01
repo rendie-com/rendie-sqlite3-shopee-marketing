@@ -1,86 +1,95 @@
 name: 每天运执一次nextjs和node
-on: 
-  # 手动触发
-  workflow_dispatch:
-  # 定时器
+
+on:
+  workflow_dispatch: 
   schedule:
-   - cron: "0 0 * * *"
+    - cron: "0 0 * * *"
+
 env:  
   TZ: Asia/Shanghai
 
+permissions:
+  contents: write
+  actions: write
+
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-    permissions:
-      actions: write
-      contents: write
     steps:
-      - name: Checkout
+      # 1. 检出主仓库
+      - name: Checkout 🛎️
         uses: actions/checkout@v4
-    
-      - name: Install Node.js
+        with:
+          fetch-depth: 1
+
+      # 2. 环境准备
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-            
-      - name: 更新时区
-        id: date
-        run: |
-          sudo timedatectl set-timezone "$TZ"
-          
-      - name: 安装文泉驿字体     
-        run: |
-          sudo apt-get install ttf-wqy-zenhei
-          
-      - name: 下载并运行rendie-nextjs       
-        run: |        
-          git clone https://github.com/rendie-com/rendie-nextjs -b main rendie-nextjs
+
+      # 3. 运行 Next.js (Standalone 模式)
+      - name: 下载 rendie-nextjs
+        uses: actions/checkout@v4
+        with:
+          repository: rendie-com/rendie-nextjs
+          token: ${{ secrets.MY_PAT }}
+          path: rendie-nextjs
+          fetch-depth: 1
+
+      - name: 启动 Next.js
+        run: |   
           cd ./rendie-nextjs/
-          npm i                
-          npm run dev &
+          pnpm i
+          pnpm run dev & 
         env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PROXY_URL: ${{ secrets.PROXY_URL }}
           NEXTJS_CONFIG_DEFAULT_DB: ${{ secrets.NEXTJS_CONFIG_DEFAULT_DB }}  
           NEXTJS_CONFIG_PG01: ${{ secrets.NEXTJS_CONFIG_PG01 }}  
           NEXTJS_CONFIG_PG02: ${{ secrets.NEXTJS_CONFIG_PG02 }} 
           NEXTJS_CONFIG_SQLITE: ${{ secrets.NEXTJS_CONFIG_SQLITE }} 
 
-      - name: 下载rendie-chrome扩展       
-        run: |        
-          git clone https://github.com/rendie-com/rendie-chrome -b main ./node/rendie-chrome   
-          
-      - name: 运行node       
+      # 4. 系统字体安装
+      - name: 安装文泉驿字体
         run: |
-          mkdir -p ./error/         
-          cd ./node/
-          npm i  
-          node ./1day.js          
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ttf-wqy-zenhei
+
+      # 5. 下载业务仓库
+      - name: 下载依赖仓库
+        run: |        
+          git clone --depth 1 https://github.com/rendie-com/rendie-chrome -b main ./rendie-chrome   
+          git clone --depth 1 https://github.com/rendie-com/rendie-node -b main ./rendie-node
+          
+      # 6. 运行 Node 业务逻辑
+      - name: 运行 node 脚本      
+        run: |
+          mkdir -p ./sqlite3/error/         
+          cd ./rendie-node/rendie-sqlite3-shopee-marketing/
+          pnpm install --no-frozen-lockfile
+          node 1day.js          
         env:
           NODE_SHOPEE_ACCESS_TOKEN: ${{ secrets.NODE_SHOPEE_ACCESS_TOKEN }}  
           NODE_SHOPEE_REFRESH_TOKEN: ${{ secrets.NODE_SHOPEE_REFRESH_TOKEN }}
           
-      - name: 部署[sqlite3/shopee/商品/]目录
+      # 7. 部署到 main 分支 🚀
+      - name: Deploy to Main 🚀
         uses: JamesIves/github-pages-deploy-action@v4
-        with: 
-            branch: main
-            folder: sqlite3/shopee/商品/
-            target-folder: sqlite3/shopee/商品/
-            
-      - name: 部署[sqlite3/shopee/营销中心/]目录
-        uses: JamesIves/github-pages-deploy-action@v4
-        with: 
-            branch: main
-            folder: sqlite3/shopee/营销中心/
-            target-folder: sqlite3/shopee/营销中心/
-            
-      - name: 部署[error/]目录
-        uses: JamesIves/github-pages-deploy-action@v4
-        with: 
-            branch: main
-            folder: error/
-            target-folder: error/
-            
+        with:
+          folder: sqlite3
+          branch: main
+          target-folder: sqlite3
+          commit-message: "data: 自动更新数据并保留源码 [skip ci]" # 👈 必须带 [skip ci] 防止死循环
+
+      # 8. 自动清理运行记录
       - name: 删除运行记录
         uses: Mattraks/delete-workflow-runs@v2
         with:
-          retain_days: 30
+          retain_days: 1
           keep_minimum_runs: 0
