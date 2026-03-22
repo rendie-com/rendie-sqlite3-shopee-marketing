@@ -3,7 +3,7 @@ name: 每天运执一次nextjs和node
 on:
   workflow_dispatch: 
   branch_protection_rule: schedule:
-   - cron: "0 0 * * *"
+    - cron: "0 0 * * *"
 
 env:  
   TZ: Asia/Shanghai
